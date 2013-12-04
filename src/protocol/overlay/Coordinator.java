@@ -1,5 +1,8 @@
 package protocol.overlay;
 
+import java.net.MalformedURLException;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -7,7 +10,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-
 
 import protocol.IRasp;
 import protocol.Rasp;
@@ -19,6 +21,8 @@ public class Coordinator {
 	
 	private static final int NBRASP = 8;
 	private static final String IPPREFIX = "192.168.50.";
+	private static final String IPPREFIXTEST = "172.16.132.";
+
 	private int alpha;
 	private static Protocol protocol;
 	
@@ -30,13 +34,27 @@ public class Coordinator {
 		List<Integer> connections = new ArrayList<Integer>();
 		List<Integer> idDispo = new ArrayList<Integer>();
 		List<Integer> notProcessed = new ArrayList<Integer>();
-		List<Rasp> raspList = new ArrayList<Rasp>();
-		Rasp r = null;
+		List<IRasp> raspList = new ArrayList<IRasp>();
+		IRasp ir = null;
 		for(int i = 1; i <= NBRASP; ++i) {
 			connections.add(0);
 			notProcessed.add(i);
-			r = new Rasp(i, protocol);
-			raspList.add(r);
+			//try to connect to rasp at 192.168.50.i:1234/raspi
+			try {
+				System.out.println("test 1");
+				ir = (IRasp) Naming.lookup("//"+IPPREFIX+i+":12345/rasp"+i);
+				System.out.println(ir);
+			} catch (MalformedURLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (NotBoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			raspList.add(ir);
 		}
 		
 		Random rand = new Random();
@@ -48,8 +66,14 @@ public class Coordinator {
 				int dispo = idDispo.get(rand.nextInt(idDispo.size()))-1;
 				idDispo.remove(new Integer(dispo+1));
 				//connection entre 2 rasp dans les deux sens
-				raspList.get(i-1).addNeighbor(raspList.get(dispo));
-				raspList.get(dispo).addNeighbor(raspList.get(i-1));
+				try {
+					raspList.get(i-1).addNeighbor(raspList.get(dispo));
+					raspList.get(dispo).addNeighbor(raspList.get(i-1));
+
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				connections.set(i-1, connections.get(i-1)+1);
 				connections.set(dispo, connections.get(dispo)+1);
 				if(connections.get(dispo) >= alpha) {
@@ -60,8 +84,13 @@ public class Coordinator {
 		}
 
 		//TODO: ajouter dans la MAP
-		for(Rasp rasp: raspList) {
-			overlay.put(rasp, rasp.getNeighborhood());
+		for(IRasp rasp: raspList) {
+			try {
+				overlay.put(rasp, rasp.getNeighborhood());
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		
 //		for(Rasp re: raspList) {

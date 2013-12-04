@@ -3,8 +3,9 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.rmi.Naming;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,18 +13,26 @@ import protocol.avg.AverageCalc;
 import protocol.avg.Protocol;
 
 
-public class Rasp implements IRasp {
+public class Rasp extends UnicastRemoteObject implements IRasp {
 	
-	private List<IRasp> neighborhood = new ArrayList<IRasp>();
+/**
+	 * 
+	 */
+	private static final long serialVersionUID = -6324900570781582947L;
+	//	private List<IRasp> neighborhood = new ArrayList<IRasp>();
+	//list of remote Object Rasp
 	private List<IRasp> remoteNeighborhood= new ArrayList<IRasp>();
 	private double myValue;
 	private Protocol protocol;
 	private int id;
 	private int compteur;
 	private static final String IPPREFIX = "192.168.50.";
+	private static final String IPPREFIXTEST = "172.16.132.";
+
 	
 	//instancié par l'overlay
-	public Rasp(int id, Protocol p) {
+	public Rasp(int id, Protocol p) throws RemoteException {
+		super();
 		this.id = id;
 		this.myValue = LinearDistribution.randomValue();
 		this.protocol = p;
@@ -47,31 +56,20 @@ public class Rasp implements IRasp {
 		return compteur;
 	}
 
-	public void addNeighbor(Rasp rasp) {
-		neighborhood.add(rasp);
-		try {
-			IRasp remR= (IRasp) Naming.lookup("//"+IPPREFIX+rasp.getId()+":1234"+rasp.getId()+"/rasp"+rasp.getId());
-			remoteNeighborhood.add(remR);
-		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NotBoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public void addNeighbor(IRasp rasp) {
+//		neighborhood.add(rasp);
+//			IRasp remR= (IRasp) Naming.lookup("//"+IPPREFIX+rasp.getId()+":1234"+rasp.getId()+"/rasp"+rasp.getId());
+			remoteNeighborhood.add(rasp);
 		
 	}
 	
 	public List<IRasp> getNeighborhood() {
-		return this.neighborhood;
+		return this.remoteNeighborhood;
 	}
 	
 	public String toString() {
 		String s = "\n" + this.id + " neighborhood :";
-		for (IRasp r : this.neighborhood) {
+		for (IRasp r : this.remoteNeighborhood) {
 			try {
 				s +=  r.getId() + "; ";
 			} catch (RemoteException e) {
@@ -95,6 +93,7 @@ public class Rasp implements IRasp {
 	
 	public void registerMe() {
 		try {
+			LocateRegistry.createRegistry(12345);
 			Naming.rebind("//"+IPPREFIX+this.id+":12345/rasp"+this.id,this );
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
@@ -110,14 +109,19 @@ public class Rasp implements IRasp {
 		Protocol p = new AverageCalc();
 		Rasp r = null;
 		try {
+			System.setProperty("java.rmi.server.hostName", InetAddress.getLocalHost().getHostAddress());
 			System.out.println(InetAddress.getLocalHost().getHostAddress());
 			r = new Rasp(Integer.valueOf(InetAddress.getLocalHost().getHostAddress().split("\\.")[3]), p);
+//			r = new Rasp(29, p);
 			System.out.println(r.getId());
 			r.registerMe();
 		} catch (NumberFormatException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
