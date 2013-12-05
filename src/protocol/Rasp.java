@@ -34,7 +34,7 @@ public class Rasp extends UnicastRemoteObject implements IRasp {
 	public Rasp(int id, Protocol p) throws RemoteException {
 		super();
 		this.id = id;
-		this.myValue = LinearDistribution.randomValue();
+		this.myValue = LinearDistribution.randomValue(this.hashCode());
 		this.protocol = p;
 		this.compteur = 0;
 		
@@ -88,6 +88,7 @@ public class Rasp extends UnicastRemoteObject implements IRasp {
 		}
 		listVal.add(this.getValue());
 		myValue = protocol.calcul(listVal);
+		System.out.println("ma nouvelle valeur est : " + myValue);
 		return myValue;
 	}
 	

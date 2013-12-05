@@ -93,9 +93,9 @@ public class Coordinator {
 			}
 		}
 		
-//		for(Rasp re: raspList) {
-//			System.out.println(overlay);
-//		}
+		for(IRasp re: raspList) {
+			System.out.println(re);
+		}
 		
 	}
 	
@@ -108,9 +108,9 @@ public class Coordinator {
 			raspindex = rand.nextInt(NBRASP)+1;
 			Iterator<IRasp> itRasp = overlay.keySet().iterator();
 			boolean find = false;
-			Rasp r = null;
+			IRasp r = null;
 			while(itRasp.hasNext() && !find) {
-				r = (Rasp) itRasp.next();
+				r = (IRasp) itRasp.next();
 				if(r.getId() == raspindex) {
 					find = true;
 				}
