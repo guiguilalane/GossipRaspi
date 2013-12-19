@@ -10,6 +10,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import protocol.IRasp;
 import protocol.Rasp;
@@ -100,38 +103,56 @@ public class Coordinator {
 	}
 	
 	public void launchJob() throws RemoteException {
-		int raspindex = Integer.MAX_VALUE;
-		Random rand = new Random();
-		int nbIteration = 100;
-		int i = 0;
-		while(i < nbIteration) {
-			raspindex = rand.nextInt(NBRASP)+1;
-			Iterator<IRasp> itRasp = overlay.keySet().iterator();
-			boolean find = false;
-			IRasp r = null;
-			while(itRasp.hasNext() && !find) {
-				r = (IRasp) itRasp.next();
-				if(r.getId() == raspindex) {
-					find = true;
-				}
-			}
-			if(find) {
-				System.out.println("Moi la rasp : " + r.getId() + ", j'ai la valeur : " + r.doJob());
-//				try {
-//					Thread.sleep(100);
-//				} catch (InterruptedException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
+		/*lance les job des rasps
+		 * 
+		 * */
+		
+		ExecutorService teps = 
+				Executors.newFixedThreadPool(NBRASP);
+		
+		for(IRasp rasp: overlay.keySet()) {
+			teps.execute(rasp);
+		}
+		
+		teps.shutdown();
+		//techniquement tout les jobs sont terminés
+		
+		for(IRasp rasp: overlay.keySet()) {
+			System.out.println("Moi la rasp : " + rasp.getId() + ", j'ai la valeur : " + rasp.doJob() + " et j'ai été appelée : " + rasp.getCompteur() + " fois!!!");
+		}
+		
+//		int raspindex = Integer.MAX_VALUE;
+//		Random rand = new Random();
+//		int nbIteration = 100;
+//		int i = 0;
+//		while(i < nbIteration) {
+//			raspindex = rand.nextInt(NBRASP)+1;
+//			Iterator<IRasp> itRasp = overlay.keySet().iterator();
+//			boolean find = false;
+//			IRasp r = null;
+//			while(itRasp.hasNext() && !find) {
+//				r = (IRasp) itRasp.next();
+//				if(r.getId() == raspindex) {
+//					find = true;
 //				}
-			} else {
-				//lever d'exception
-				System.err.println("ça a PT sur l'index : " + raspindex);
-			}
-			i++;
-		}
-		for(IRasp r: overlay.keySet()) {
-			System.out.println("Moi la rasp : " + r.getId() + ", j'ai été appélée : " + r.getCompteur() + " fois.");
-		}
+//			}
+//			if(find) {
+//				System.out.println("Moi la rasp : " + r.getId() + ", j'ai la valeur : " + r.doJob());
+////				try {
+////					Thread.sleep(100);
+////				} catch (InterruptedException e) {
+////					// TODO Auto-generated catch block
+////					e.printStackTrace();
+////				}
+//			} else {
+//				//lever d'exception
+//				System.err.println("ça a PT sur l'index : " + raspindex);
+//			}
+//			i++;
+//		}
+//		for(IRasp r: overlay.keySet()) {
+//			System.out.println("Moi la rasp : " + r.getId() + ", j'ai été appélée : " + r.getCompteur() + " fois.");
+//		}
 	}
 	
 	public static void main(String[] args) throws RemoteException {
