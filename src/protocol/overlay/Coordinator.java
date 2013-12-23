@@ -35,9 +35,9 @@ public class Coordinator {
 			notProcessed.add(i);
 			//try to connect to rasp at 192.168.50.i:1234/raspi
 			try {
-				System.out.println("test 1");
 				ir = (IRasp) Naming.lookup("//"+IPPREFIX+i+":12345/rasp"+i);
-				System.out.println(ir.display());
+				raspList.add(new RunnableRasp(ir));
+				ir.init();
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
 			} catch (RemoteException e) {
@@ -45,7 +45,6 @@ public class Coordinator {
 			} catch (NotBoundException e) {
 				e.printStackTrace();
 			}
-			raspList.add(new RunnableRasp(ir));
 		}
 
 		Random rand = new Random();
@@ -75,6 +74,15 @@ public class Coordinator {
 
 		for(RunnableRasp rasp: raspList) {
 			overlay.add(rasp);
+		}
+		
+		for(RunnableRasp rasp: raspList) {
+			try {
+				System.out.println(rasp.display());
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 
 	}

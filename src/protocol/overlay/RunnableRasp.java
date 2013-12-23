@@ -75,7 +75,12 @@ public class RunnableRasp implements Runnable, IRasp{
 
 	@Override
 	public String display() throws RemoteException {
-		return this.display();
+		return this.rasp.display();
+	}
+
+	@Override
+	public void init() throws RemoteException {
+		this.rasp.init();
 	}
 	
 	

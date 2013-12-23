@@ -15,4 +15,5 @@ public interface IRasp  extends Remote{
 	public int id() throws RemoteException ;
 	public double getValue() throws RemoteException ;
 	public String display() throws RemoteException ;
+	public void init() throws RemoteException ;
 }

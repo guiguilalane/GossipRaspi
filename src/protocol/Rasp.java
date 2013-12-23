@@ -20,7 +20,7 @@ public class Rasp extends UnicastRemoteObject implements IRasp{
 	 * 
 	 */
 	private static final long serialVersionUID = -6324900570781582947L;
-	private List<IRasp> remoteNeighborhood= new ArrayList<IRasp>();
+	private List<IRasp> remoteNeighborhood;
 	private double myValue;
 	private Protocol protocol;
 	private int id;
@@ -35,12 +35,13 @@ public class Rasp extends UnicastRemoteObject implements IRasp{
 		this.id = id;
 		this.protocol = p;
 		this.nbCycle = nbCycle;
-		this.init();
 	}
 	
-	private void init() {
+	@Override
+	public void init() throws RemoteException {
+		this.remoteNeighborhood = new ArrayList<IRasp>();
 		this.compteur = 0;
-		this.myValue = LinearDistribution.randomValue(this.hashCode());
+		this.myValue = LinearDistribution.randomValue(Long.valueOf(System.currentTimeMillis()).intValue());
 		System.out.println("J'ai la valeur : " + this.myValue);	
 	}
 	
@@ -90,7 +91,6 @@ public class Rasp extends UnicastRemoteObject implements IRasp{
 			récupérer ça valeur
 			mettre à jour ma valeur
 		*/
-		
 		for(int i = 0; i < nbCycle; ++i) {
 			executeCycle();
 			try {
