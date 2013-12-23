@@ -5,40 +5,31 @@ import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import protocol.IRasp;
-import protocol.Rasp;
-import protocol.avg.Protocol;
-import protocol.avg.AverageCalc;
 
-//TODO: déployer le coordinateur sur la rasp raspi et déployer les autres rasp sur les raspberry correpondantes
 public class Coordinator {
-	
+
 	private static final int NBRASP = 8;
 	private static final String IPPREFIX = "192.168.50.";
-	private static final String IPPREFIXTEST = "172.16.132.";
 
 	private int alpha;
-	private static Protocol protocol;
-	
-	Map<IRasp, List<IRasp>> overlay = new HashMap<IRasp, List<IRasp>>();
-	
+
+	HashSet<RunnableRasp> overlay = new HashSet<RunnableRasp>();
+
 	public Coordinator() {
-		protocol = new AverageCalc();
 		this.alpha = NBRASP/2 + 1;
 		List<Integer> connections = new ArrayList<Integer>();
 		List<Integer> idDispo = new ArrayList<Integer>();
 		List<Integer> notProcessed = new ArrayList<Integer>();
-		List<IRasp> raspList = new ArrayList<IRasp>();
+		List<RunnableRasp> raspList = new ArrayList<RunnableRasp>();
 		IRasp ir = null;
+
 		for(int i = 1; i <= NBRASP; ++i) {
 			connections.add(0);
 			notProcessed.add(i);
@@ -48,20 +39,17 @@ public class Coordinator {
 				ir = (IRasp) Naming.lookup("//"+IPPREFIX+i+":12345/rasp"+i);
 				System.out.println(ir);
 			} catch (MalformedURLException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (RemoteException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (NotBoundException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			raspList.add(ir);
+			raspList.add(new RunnableRasp(ir));
 		}
-		
+
 		Random rand = new Random();
-		
+
 		for(int i = 1; i <= NBRASP && notProcessed.size() > 1; ++i) {
 			notProcessed.remove(new Integer(i));
 			idDispo = new ArrayList<Integer>(notProcessed);
@@ -70,11 +58,10 @@ public class Coordinator {
 				idDispo.remove(new Integer(dispo+1));
 				//connection entre 2 rasp dans les deux sens
 				try {
-					raspList.get(i-1).addNeighbor(raspList.get(dispo));
-					raspList.get(dispo).addNeighbor(raspList.get(i-1));
+					raspList.get(i-1).addNeighbor(raspList.get(dispo).getIRasp());
+					raspList.get(dispo).addNeighbor(raspList.get(i-1).getIRasp());
 
 				} catch (RemoteException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				connections.set(i-1, connections.get(i-1)+1);
@@ -83,83 +70,42 @@ public class Coordinator {
 					notProcessed.remove(new Integer(dispo+1));
 				}
 			}
-			
+
 		}
 
-		//TODO: ajouter dans la MAP
-		for(IRasp rasp: raspList) {
-			try {
-				overlay.put(rasp, rasp.getNeighborhood());
-			} catch (RemoteException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		for(RunnableRasp rasp: raspList) {
+			overlay.add(rasp);
 		}
-		
-		for(IRasp re: raspList) {
-			System.out.println(re);
-		}
-		
+
 	}
-	
+
 	public void launchJob() throws RemoteException {
 		/*lance les job des rasps
 		 * 
 		 * */
-		
+
 		ExecutorService teps = 
 				Executors.newFixedThreadPool(NBRASP);
 		
-		for(IRasp rasp: overlay.keySet()) {
+		for(RunnableRasp rasp: overlay) {
 			teps.execute(rasp);
 		}
-		
+
+
 		teps.shutdown();
 		//techniquement tout les jobs sont terminés
 		
-		for(IRasp rasp: overlay.keySet()) {
-			System.out.println("Moi la rasp : " + rasp.getId() + ", j'ai la valeur : " + rasp.doJob() + " et j'ai été appelée : " + rasp.getCompteur() + " fois!!!");
+		for(RunnableRasp rasp: overlay) {
+			System.out.println("Moi la rasp : " + rasp.id() + ", j'ai la valeur : " + rasp.doJob() + " et j'ai ete appelee : " + rasp.getCompteur() + " fois!!!");
 		}
-		
-//		int raspindex = Integer.MAX_VALUE;
-//		Random rand = new Random();
-//		int nbIteration = 100;
-//		int i = 0;
-//		while(i < nbIteration) {
-//			raspindex = rand.nextInt(NBRASP)+1;
-//			Iterator<IRasp> itRasp = overlay.keySet().iterator();
-//			boolean find = false;
-//			IRasp r = null;
-//			while(itRasp.hasNext() && !find) {
-//				r = (IRasp) itRasp.next();
-//				if(r.getId() == raspindex) {
-//					find = true;
-//				}
-//			}
-//			if(find) {
-//				System.out.println("Moi la rasp : " + r.getId() + ", j'ai la valeur : " + r.doJob());
-////				try {
-////					Thread.sleep(100);
-////				} catch (InterruptedException e) {
-////					// TODO Auto-generated catch block
-////					e.printStackTrace();
-////				}
-//			} else {
-//				//lever d'exception
-//				System.err.println("ça a PT sur l'index : " + raspindex);
-//			}
-//			i++;
-//		}
-//		for(IRasp r: overlay.keySet()) {
-//			System.out.println("Moi la rasp : " + r.getId() + ", j'ai été appélée : " + r.getCompteur() + " fois.");
-//		}
+
 	}
-	
+
 	public static void main(String[] args) throws RemoteException {
 		Coordinator o = new Coordinator();
 		o.launchJob();
 	}
-	
-	
+
+
 
 }

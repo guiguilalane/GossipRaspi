@@ -20,8 +20,6 @@ public class Rasp extends UnicastRemoteObject implements IRasp{
 	 * 
 	 */
 	private static final long serialVersionUID = -6324900570781582947L;
-	//	private List<IRasp> neighborhood = new ArrayList<IRasp>();
-	//list of remote Object Rasp
 	private List<IRasp> remoteNeighborhood= new ArrayList<IRasp>();
 	private double myValue;
 	private Protocol protocol;
@@ -29,7 +27,6 @@ public class Rasp extends UnicastRemoteObject implements IRasp{
 	private int nbCycle;
 	private int compteur;
 	private static final String IPPREFIX = "192.168.50.";
-	private static final String IPPREFIXTEST = "172.16.132.";
 
 	
 	//instancié par l'overlay
@@ -41,10 +38,7 @@ public class Rasp extends UnicastRemoteObject implements IRasp{
 		this.nbCycle = nbCycle;
 		this.compteur = 0;
 		
-	
-		/** Enregistrement du raspi sur le port 12345 **/
-	
-//		IRasp voisin= Naming.lookup("")
+		System.out.println("J'ai la valeur : " + this.myValue);	
 	}
 	
 	@Override
@@ -61,14 +55,12 @@ public class Rasp extends UnicastRemoteObject implements IRasp{
 		return this.nbCycle;
 	}
 	
-	public int getId() {
+	public int id() {
 		return this.id;
 	}
 	
 	public void addNeighbor(IRasp rasp) {
-//		neighborhood.add(rasp);
-//			IRasp remR= (IRasp) Naming.lookup("//"+IPPREFIX+rasp.getId()+":1234"+rasp.getId()+"/rasp"+rasp.getId());
-			this.remoteNeighborhood.add(rasp);
+		this.remoteNeighborhood.add(rasp);
 		
 	}
 	
@@ -80,7 +72,7 @@ public class Rasp extends UnicastRemoteObject implements IRasp{
 		String s = "\n" + this.id + " neighborhood :";
 		for (IRasp r : this.remoteNeighborhood) {
 			try {
-				s +=  r.getId() + "; ";
+				s +=  r.id() + "; ";
 			} catch (RemoteException e) {
 				e.printStackTrace();
 			}
@@ -96,14 +88,6 @@ public class Rasp extends UnicastRemoteObject implements IRasp{
 			mettre à jour ma valeur
 		*/
 		
-//		this.compteur++;
-//		List<Double> listVal = new ArrayList<Double>();
-//		for(IRasp r: remoteNeighborhood) {
-//			listVal.add(r.getValue());
-//		}
-//		listVal.add(this.getValue());
-//		this.myValue = protocol.calcul(listVal);
-//		System.out.println("ma nouvelle valeur est : " + myValue);
 		for(int i = 0; i < nbCycle; ++i) {
 			executeCycle();
 			try {
@@ -151,6 +135,11 @@ public class Rasp extends UnicastRemoteObject implements IRasp{
 		this.myValue = protocol.calcul(listVal);
 	}
 	
+	@Override
+	public String display() throws RemoteException {
+		return this.toString();
+	}
+	
 	private synchronized double exchange() throws RemoteException {
 		IRasp r = getOneNeighbor();
 		r.receiveRequest(this.myValue);
@@ -170,16 +159,6 @@ public class Rasp extends UnicastRemoteObject implements IRasp{
 		}
 	}
 	
-	@Override
-	public void run() {
-		try {
-			this.doJob();
-		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
 	//lancer le serveur de la Rasp
 	public static void main(String[] args) {
 		Protocol p = new AverageCalc();
@@ -187,9 +166,8 @@ public class Rasp extends UnicastRemoteObject implements IRasp{
 		try {
 			System.setProperty("java.rmi.server.hostName", InetAddress.getLocalHost().getHostAddress());
 			System.out.println(InetAddress.getLocalHost().getHostAddress());
-			r = new Rasp(Integer.valueOf(InetAddress.getLocalHost().getHostAddress().split("\\.")[3]), p, 100);
-//			r = new Rasp(29, p);
-			System.out.println(r.getId());
+			r = new Rasp(Integer.valueOf(InetAddress.getLocalHost().getHostAddress().split("\\.")[3]), p, Integer.valueOf(args[0]));
+			System.out.println(r.id());
 			r.registerMe();
 		} catch (NumberFormatException e) {
 			// TODO Auto-generated catch block
@@ -202,5 +180,4 @@ public class Rasp extends UnicastRemoteObject implements IRasp{
 			e.printStackTrace();
 		}
 	}
-
 }
