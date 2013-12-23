@@ -37,7 +37,7 @@ public class Coordinator {
 			try {
 				System.out.println("test 1");
 				ir = (IRasp) Naming.lookup("//"+IPPREFIX+i+":12345/rasp"+i);
-				System.out.println(ir);
+				System.out.println(ir.display());
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
 			} catch (RemoteException e) {
